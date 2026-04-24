@@ -55,7 +55,7 @@ pub async fn run(path: &Path, concurrency: usize, timeout_secs: u64) -> Result<(
         let sem = Arc::clone(&sem);
         let pb = Arc::clone(&pb);
         handles.push(tokio::spawn(async move {
-            let _permit = sem.acquire().await.unwrap();
+            let _permit = sem.acquire().await.expect("semaphore closed");
             let status = check(&client, &url).await;
             pb.inc(1);
             (status, bms)

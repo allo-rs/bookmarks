@@ -30,15 +30,15 @@ pub fn run(path: &Path, keyword: &str, target_folder: &str, dry_run: bool) -> Re
         return Ok(());
     }
 
-    let backup = write::backup(path)?;
-    println!("备份已保存：{}", backup.display());
-
     let ids: HashSet<String> = matches.iter().map(|m| m.id.clone()).collect();
     let (new_data, extracted) = write::extract_from_roots(&data, &ids);
 
     if extracted.is_empty() {
         bail!("提取节点失败，操作取消");
     }
+
+    let backup = write::backup(path)?;
+    println!("备份已保存：{}", backup.display());
 
     let new_data = write::insert_into_roots(&new_data, &folder_id, &extracted)?;
     write::save(path, &new_data)?;

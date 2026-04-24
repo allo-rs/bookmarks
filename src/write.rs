@@ -24,7 +24,7 @@ pub fn save(path: &Path, data: &Value) -> Result<()> {
 
 pub fn backup(path: &Path) -> Result<PathBuf> {
     use std::time::{SystemTime, UNIX_EPOCH};
-    let ts = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
+    let ts = SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis();
     let backup = path.with_file_name(format!("Bookmarks.bm-{ts}"));
     std::fs::copy(path, &backup)?;
     Ok(backup)
@@ -103,7 +103,7 @@ pub fn insert_into(node: &Value, folder_id: &str, items: &[Value]) -> (Value, bo
     let mut new_node = node.clone();
     let id = node["id"].as_str().unwrap_or("");
 
-    if id == folder_id {
+    if !folder_id.is_empty() && id == folder_id {
         if let Some(children) = new_node["children"].as_array_mut() {
             children.extend_from_slice(items);
             return (new_node, true);
@@ -148,7 +148,7 @@ pub fn find_folder_id(data: &Value, folder_path: &str) -> Option<String> {
             c["name"].as_str() == Some(part) && c["type"].as_str() != Some("url")
         })?;
     }
-    current["id"].as_str().map(|s| s.to_string())
+    current["id"].as_str().filter(|s| !s.is_empty()).map(|s| s.to_string())
 }
 
 /// 对 roots 对象的每个 root 应用变换 f，返回新的 roots Value
