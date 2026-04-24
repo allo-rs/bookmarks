@@ -4,6 +4,7 @@ use anyhow::Result;
 mod bookmark;
 mod cmd;
 mod finder;
+mod write;
 
 #[derive(Parser)]
 #[command(name = "bm", about = "Chrome 书签管理工具")]
@@ -24,16 +25,33 @@ enum Commands {
     Dupes,
     /// 分析文件夹结构问题
     Analyze,
-    /// 搜索书签
+    /// 搜索书签（模糊匹配 + 相关度排序）
     Search { query: Vec<String> },
     /// 并发检测死链
     Deadlinks {
-        /// 并发数（默认 100）
         #[arg(long, default_value = "100")]
         concurrency: usize,
-        /// 超时秒数（默认 8）
         #[arg(long, default_value = "8")]
         timeout: u64,
+    },
+    /// 删除匹配书签（⚠️ 写操作，建议先加 --dry-run）
+    Delete {
+        /// 关键词（匹配书签名或 URL）
+        keyword: Vec<String>,
+        /// 预览变更，不实际修改
+        #[arg(long)]
+        dry_run: bool,
+    },
+    /// 移动书签到指定文件夹（⚠️ 写操作，建议先加 --dry-run）
+    Mv {
+        /// 关键词（匹配书签名或 URL）
+        keyword: Vec<String>,
+        /// 目标文件夹路径，如 "书签栏/云服务器/网络监控"
+        #[arg(long)]
+        to: String,
+        /// 预览变更，不实际修改
+        #[arg(long)]
+        dry_run: bool,
     },
 }
 
@@ -44,12 +62,18 @@ async fn main() -> Result<()> {
     eprintln!("[chrome  {}]\n", path.display());
 
     match cli.command.unwrap_or(Commands::Structure) {
-        Commands::Structure => cmd::structure::run(&path)?,
-        Commands::Dupes => cmd::dupes::run(&path)?,
-        Commands::Analyze => cmd::analyze::run(&path)?,
+        Commands::Structure   => cmd::structure::run(&path)?,
+        Commands::Dupes       => cmd::dupes::run(&path)?,
+        Commands::Analyze     => cmd::analyze::run(&path)?,
         Commands::Search { query } => cmd::search::run(&path, &query.join(" "))?,
         Commands::Deadlinks { concurrency, timeout } => {
             cmd::deadlinks::run(&path, concurrency, timeout).await?
+        }
+        Commands::Delete { keyword, dry_run } => {
+            cmd::delete::run(&path, &keyword.join(" "), dry_run)?
+        }
+        Commands::Mv { keyword, to, dry_run } => {
+            cmd::mv::run(&path, &keyword.join(" "), &to, dry_run)?
         }
     }
 
