@@ -1,25 +1,25 @@
 ---
 name: bookmarks
 description: >
-  浏览器书签管理工具。支持查看书签结构、查找重复书签、分析优化建议、搜索书签。
-  触发时机：用户提到「书签」「bookmark」「整理书签」「查重复书签」「书签搜索」等关键词时。
+  浏览器书签管理工具（Chrome）。支持查看书签结构、查找重复书签、分析优化建议、搜索书签、并发检测死链。
+  触发时机：用户提到「书签」「bookmark」「整理书签」「查重复书签」「书签搜索」「死链」「失效书签」等关键词时。
 license: MIT
 metadata:
   author: c.chen
-  version: "1.0.0"
+  version: "2.0.0"
 ---
 
 # bookmarks
 
-脚本：`~/dev/bookmarks/scripts/bookmarks.py`
+二进制：`~/dev/bookmarks/target/release/bm`
 
 ## 调用格式
 
 ```bash
-python3 ~/dev/bookmarks/scripts/bookmarks.py [--browser chrome|edge] [--profile N] <子命令>
+~/dev/bookmarks/target/release/bm [--profile N] <子命令>
 ```
 
-浏览器参数可省略（自动检测）。`--profile 1` 指定 Chrome Profile 编号。
+`--profile 1` 指定 Chrome Profile 编号（默认自动选 Profile 1）。
 
 ## 子命令对照表
 
@@ -29,11 +29,18 @@ python3 ~/dev/bookmarks/scripts/bookmarks.py [--browser chrome|edge] [--profile 
 | 查找/清理重复书签 | `dupes` |
 | 分析书签组织是否合理、给优化建议 | `analyze` |
 | 搜索特定书签 | `search <关键词>` |
+| 检测死链/失效书签 | `deadlinks [--concurrency 100] [--timeout 8]` |
+
+## 死链检测说明
+
+- 自动去重（相同 URL 只请求一次）
+- 并发默认 100，超时默认 8s，可调节
+- 输出分类：HTTP 错误 / 超时 / 连接失败 / 已重定向（仍可访问）
 
 ## 执行流程
 
 1. 判断用户意图，选对子命令
-2. 运行脚本，获取输出
+2. 运行命令，获取输出
 3. 基于输出给出中文分析和建议
 
 ## NEVER
