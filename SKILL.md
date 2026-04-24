@@ -11,12 +11,12 @@ metadata:
 
 # bookmarks
 
-二进制：`~/dev/bookmarks/target/release/bm`
+二进制：`~/dev/bookmarks/scripts/bm`
 
 ## 调用格式
 
 ```bash
-~/dev/bookmarks/target/release/bm [--profile N] <子命令>
+~/dev/bookmarks/scripts/bm [--profile N] <子命令>
 ```
 
 `--profile 1` 指定 Chrome Profile 编号（默认自动选 Profile 1）。
