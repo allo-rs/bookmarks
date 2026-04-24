@@ -3,5 +3,8 @@ pub mod deadlinks;
 pub mod delete;
 pub mod dupes;
 pub mod mv;
+pub mod rename;
 pub mod search;
+pub mod sort;
+pub mod stats;
 pub mod structure;

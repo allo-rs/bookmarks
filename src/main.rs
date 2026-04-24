@@ -53,6 +53,31 @@ enum Commands {
         #[arg(long)]
         dry_run: bool,
     },
+    /// 重命名匹配的书签（⚠️ 写操作，建议先加 --dry-run）
+    Rename {
+        /// 关键词（匹配书签名或 URL）
+        keyword: Vec<String>,
+        /// 新名称
+        #[arg(long)]
+        name: String,
+        /// 预览变更，不实际修改
+        #[arg(long)]
+        dry_run: bool,
+    },
+    /// 统计书签数量分布（按文件夹 / 域名）
+    Stats {
+        /// 显示 Top N 域名（默认 20）
+        #[arg(long, default_value = "20")]
+        top: usize,
+    },
+    /// 对指定文件夹内书签按名称排序（⚠️ 写操作，建议先加 --dry-run）
+    Sort {
+        /// 文件夹路径，如 "书签栏/工具"
+        folder: Vec<String>,
+        /// 预览变更，不实际修改
+        #[arg(long)]
+        dry_run: bool,
+    },
 }
 
 #[tokio::main]
@@ -74,6 +99,13 @@ async fn main() -> Result<()> {
         }
         Commands::Mv { keyword, to, dry_run } => {
             cmd::mv::run(&path, &keyword.join(" "), &to, dry_run)?
+        }
+        Commands::Rename { keyword, name, dry_run } => {
+            cmd::rename::run(&path, &keyword.join(" "), &name, dry_run)?
+        }
+        Commands::Stats { top } => cmd::stats::run(&path, top)?,
+        Commands::Sort { folder, dry_run } => {
+            cmd::sort::run(&path, &folder.join(" "), dry_run)?
         }
     }
 

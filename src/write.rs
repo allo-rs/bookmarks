@@ -191,6 +191,68 @@ pub fn insert_into_roots(data: &Value, folder_id: &str, items: &[Value]) -> Resu
     bail!("目标文件夹未找到");
 }
 
+/// 将指定 ID 的书签重命名
+pub fn rename_in_roots(data: &Value, ids: &HashSet<String>, new_name: &str) -> Value {
+    map_roots(data, |root| rename_ids(root, ids, new_name))
+}
+
+fn rename_ids(node: &Value, ids: &HashSet<String>, new_name: &str) -> Value {
+    let mut new_node = node.clone();
+    if let Some(id) = node["id"].as_str() {
+        if ids.contains(id) {
+            new_node["name"] = Value::String(new_name.to_string());
+            return new_node;
+        }
+    }
+    if let Some(children) = node["children"].as_array() {
+        let new_children: Vec<Value> = children.iter().map(|c| rename_ids(c, ids, new_name)).collect();
+        new_node["children"] = Value::Array(new_children);
+    }
+    new_node
+}
+
+/// 对指定 folder_id 的 children 排序（文件夹优先，各组内按名称字典序）
+/// 返回 (新数据, 排序的子项数量)
+pub fn sort_folder_in_roots(data: &Value, folder_id: &str) -> (Value, usize) {
+    let mut new_data = data.clone();
+    let mut count = 0;
+    if let Some(roots) = new_data["roots"].as_object_mut() {
+        for root in roots.values_mut() {
+            if let Some(c) = sort_in_tree(root, folder_id) {
+                count = c;
+                break;
+            }
+        }
+    }
+    (new_data, count)
+}
+
+fn sort_in_tree(node: &mut Value, folder_id: &str) -> Option<usize> {
+    if node["id"].as_str().filter(|s| !s.is_empty()) == Some(folder_id) {
+        if let Some(children) = node["children"].as_array_mut() {
+            let count = children.len();
+            children.sort_by(|a, b| {
+                let a_is_folder = a["children"].is_array();
+                let b_is_folder = b["children"].is_array();
+                b_is_folder.cmp(&a_is_folder).then_with(|| {
+                    let an = a["name"].as_str().unwrap_or("");
+                    let bn = b["name"].as_str().unwrap_or("");
+                    an.cmp(bn)
+                })
+            });
+            return Some(count);
+        }
+    }
+    if let Some(children) = node["children"].as_array_mut() {
+        for child in children.iter_mut() {
+            if let Some(c) = sort_in_tree(child, folder_id) {
+                return Some(c);
+            }
+        }
+    }
+    None
+}
+
 fn join_path(parent: &str, name: &str) -> String {
     if name.is_empty() { parent.to_string() }
     else if parent.is_empty() { name.to_string() }
