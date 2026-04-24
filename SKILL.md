@@ -11,14 +11,10 @@ metadata:
 
 # bookmarks
 
-二进制：`{BASE_DIR}/scripts/bm`
-
-> `{BASE_DIR}` 由 Claude Code 的 `Base directory for this skill` 提供，调用时替换为实际路径。
-
 ## 调用格式
 
 ```bash
-{BASE_DIR}/scripts/bm [--profile N] <子命令>
+./scripts/bm [--profile N] <子命令>
 ```
 
 `--profile 1` 指定 Chrome Profile 编号（默认自动选 Profile 1）。
@@ -42,7 +38,7 @@ metadata:
 ## 执行流程
 
 1. 判断用户意图，选对子命令
-2. 用 `Base directory for this skill` 拼出完整路径，运行命令
+2. 运行命令，获取输出
 3. 基于输出给出中文分析和建议
 
 ## NEVER
