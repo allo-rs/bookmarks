@@ -78,6 +78,25 @@ enum Commands {
         #[arg(long)]
         dry_run: bool,
     },
+    /// 新建文件夹（⚠️ 写操作，建议先加 --dry-run）
+    Mkdir {
+        /// 完整路径，如 "书签栏/云服务器/新分类"
+        path: Vec<String>,
+        /// 预览变更，不实际修改
+        #[arg(long)]
+        dry_run: bool,
+    },
+    /// 移动文件夹到指定位置（⚠️ 写操作，建议先加 --dry-run）
+    Mvdir {
+        /// 源文件夹路径，如 "书签栏/云服务器/旧分类"
+        source: Vec<String>,
+        /// 目标父文件夹路径，如 "书签栏/技术开发"
+        #[arg(long)]
+        to: String,
+        /// 预览变更，不实际修改
+        #[arg(long)]
+        dry_run: bool,
+    },
 }
 
 #[tokio::main]
@@ -106,6 +125,12 @@ async fn main() -> Result<()> {
         Commands::Stats { top } => cmd::stats::run(&path, top)?,
         Commands::Sort { folder, dry_run } => {
             cmd::sort::run(&path, &folder.join(" "), dry_run)?
+        }
+        Commands::Mkdir { path: folder_path, dry_run } => {
+            cmd::mkdir::run(&path, &folder_path.join(" "), dry_run)?
+        }
+        Commands::Mvdir { source, to, dry_run } => {
+            cmd::mvdir::run(&path, &source.join(" "), &to, dry_run)?
         }
     }
 
