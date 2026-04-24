@@ -1,12 +1,12 @@
 ---
 name: bookmarks
 description: >
-  浏览器书签管理工具（Chrome）。支持查看书签结构、查找重复书签、分析优化建议、搜索书签、并发检测死链、删除/移动/重命名书签、统计分布、文件夹排序。
-  触发时机：用户提到「书签」「bookmark」「整理书签」「查重复书签」「书签搜索」「死链」「失效书签」「删除书签」「移动书签」「重命名书签」「书签统计」「排序书签」等关键词时。
+  浏览器书签管理工具（Chrome）。支持查看书签结构、查找重复书签、分析优化建议、搜索书签、并发检测死链、删除/移动/重命名书签、新建/移动文件夹、统计分布、文件夹排序。
+  触发时机：用户提到「书签」「bookmark」「整理书签」「查重复书签」「书签搜索」「死链」「失效书签」「删除书签」「移动书签」「重命名书签」「书签统计」「排序书签」「新建文件夹」「移动文件夹」等关键词时。
 license: MIT
 metadata:
   author: c.chen
-  version: "3.0.0"
+  version: "3.1.0"
 ---
 
 # bookmarks
@@ -33,8 +33,10 @@ metadata:
 | 移动书签到指定文件夹 | `mv <关键词> --to <文件夹路径> [--dry-run]` |
 | 重命名书签 | `rename <关键词> --name <新名称> [--dry-run]` |
 | 对文件夹内书签按名称排序 | `sort <文件夹路径> [--dry-run]` |
+| 新建文件夹 | `mkdir <完整路径> [--dry-run]` |
+| 移动文件夹（含全部书签）到新位置 | `mvdir <源路径> --to <目标父文件夹> [--dry-run]` |
 
-## 写操作说明（delete / mv / rename / sort）
+## 写操作说明（delete / mv / rename / sort / mkdir / mvdir）
 
 - **必须先 `--dry-run` 预览**，确认无误后再去掉该参数执行
 - 执行前自动备份书签文件（`Bookmarks.bm-<毫秒时间戳>`）
@@ -57,6 +59,6 @@ metadata:
 
 ## NEVER
 
-- **NEVER 未经 --dry-run 确认直接执行 delete / mv / rename / sort**
+- **NEVER 未经 --dry-run 确认直接执行 delete / mv / rename / sort / mkdir / mvdir**
 - **NEVER 在 Chrome 未完全关闭时执行写操作**
 - **NEVER 未经用户确认就执行任何写操作**

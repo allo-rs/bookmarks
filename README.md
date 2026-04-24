@@ -1,118 +1,118 @@
-# bm — Chrome 书签管理 CLI
+# bookmarks — Chrome 书签管理 Skill
 
-Chrome 书签管理命令行工具，支持查看结构、搜索、去重、分析、死链检测以及写操作（删除/移动/重命名/排序/文件夹管理）。
+这是一个 [Claude Code Skill](https://docs.claude.ai/skills)，让 Claude 能够直接管理你的 Chrome 书签。
 
-## 安装
+对话中提到书签相关需求时，Claude 会自动调用本 skill，无需手动输入命令。
+
+## 工作原理
+
+```
+用户说「帮我找重复书签」
+    ↓
+Claude 触发 bookmarks skill
+    ↓
+skill 调用 scripts/bm dupes（Rust 编译的本地二进制）
+    ↓
+Claude 解读输出，给出中文分析和建议
+```
+
+底层工具是 `bm`，一个用 Rust 编写的 Chrome 书签 CLI，直接读写 `~/Library/Application Support/Google/Chrome/*/Bookmarks`。
+
+---
+
+## 安装 Skill
 
 ```bash
+# 1. 编译二进制
 cargo build --release
-# 二进制在 target/release/bm
+cp target/release/bm skills/bookmarks/scripts/bm
+
+# 2. 部署到 Claude Code
+cp -r skills/bookmarks ~/.claude/skills/bookmarks
 ```
 
-或直接使用预构建版本：
+之后重启 Claude Code 即可生效。
+
+---
+
+## 触发关键词
+
+用户消息中包含以下关键词时 skill 自动激活：
+
+`书签` `bookmark` `整理书签` `查重复书签` `书签搜索` `死链` `失效书签`  
+`删除书签` `移动书签` `重命名书签` `书签统计` `排序书签` `新建文件夹` `移动文件夹`
+
+---
+
+## 支持的操作
+
+### 只读
+
+| 操作 | 触发示例 |
+|------|---------|
+| 查看书签树结构 | 「显示我的书签文件夹」 |
+| 查找重复书签 | 「有没有重复的书签」 |
+| 分析结构问题 | 「帮我分析一下书签组织」 |
+| 模糊搜索 | 「搜索 github 相关书签」 |
+| 统计分布 | 「统计各文件夹书签数量」 |
+| 检测死链 | 「检测失效书签」 |
+
+### 写操作（执行前必须关闭 Chrome）
+
+| 操作 | 触发示例 |
+|------|---------|
+| 删除书签 | 「删掉 bilibili 相关书签」 |
+| 移动书签 | 「把云服务器书签移到技术开发文件夹」 |
+| 重命名书签 | 「把这个书签改名为 XX」 |
+| 排序文件夹 | 「把工具文件夹里的书签排个序」 |
+| 新建文件夹 | 「在书签栏下新建一个"归档"文件夹」 |
+| 移动文件夹 | 「把旧分类文件夹移到归档下面」 |
+
+> 所有写操作均有 `--dry-run` 预览步骤，Claude 会先让你确认再执行。  
+> 每次写操作前自动备份书签文件（`Bookmarks.bm-<时间戳>`）。
+
+---
+
+## 直接使用 CLI
+
+不经过 skill，也可以直接运行：
 
 ```bash
-./skills/bookmarks/scripts/bm
-```
-
-## 用法
-
-```
 bm [--profile N] <子命令>
 ```
 
-`--profile N` 指定 Chrome Profile 编号（如 `--profile 1` 对应 `Profile 1`）。省略时自动选取第一个可用 Profile。
-
----
-
-## 子命令
-
-### 只读操作
-
-| 子命令 | 功能 |
-|--------|------|
-| `structure` | 展示书签文件夹树（默认命令） |
-| `dupes` | 查找重复书签（相同 URL） |
-| `analyze` | 分析文件夹结构问题，给出优化建议 |
-| `search <关键词>` | 模糊搜索书签（名称 + URL），按相关度排序 |
-| `stats [--top N]` | 统计书签数量分布（按文件夹 / 按域名 Top N，默认 20） |
-| `deadlinks` | 并发检测死链，见下方详细说明 |
-
-### 写操作
-
-> **安全规则：所有写操作执行前必须完全关闭 Chrome，否则 Chrome 重启后会覆盖修改。**
-
-| 子命令 | 功能 |
-|--------|------|
-| `delete <关键词> [--dry-run]` | 删除匹配书签（名称或 URL 包含关键词） |
-| `mv <关键词> --to <文件夹路径> [--dry-run]` | 移动匹配书签到指定文件夹 |
-| `rename <关键词> --name <新名称> [--dry-run]` | 重命名匹配书签 |
-| `sort <文件夹路径> [--dry-run]` | 对指定文件夹内书签按名称排序 |
-| `mkdir <完整路径> [--dry-run]` | 新建文件夹（支持多级路径） |
-| `mvdir <源路径> --to <目标父文件夹> [--dry-run]` | 移动文件夹到指定位置 |
-
----
-
-## 示例
-
 ```bash
-# 查看书签树
-bm structure
-
-# 搜索包含 "github" 的书签
-bm search github
-
-# 查看书签统计（Top 30 域名）
-bm stats --top 30
-
-# 检测死链（200 并发，10s 超时）
-bm deadlinks --concurrency 200 --timeout 10
-
-# 预览删除含 "bilibili" 的书签（不实际修改）
-bm delete bilibili --dry-run
-
-# 确认后执行删除
-bm delete bilibili
-
-# 移动书签到指定文件夹（先预览）
-bm mv "云服务器" --to "书签栏/技术开发/服务器" --dry-run
-bm mv "云服务器" --to "书签栏/技术开发/服务器"
-
-# 新建多级文件夹
-bm mkdir "书签栏/技术开发/新工具" --dry-run
-bm mkdir "书签栏/技术开发/新工具"
-
-# 移动文件夹
+bm structure                          # 查看书签树
+bm search github                      # 搜索书签
+bm dupes                              # 查重复
+bm stats --top 30                     # 统计 Top 30 域名
+bm deadlinks --concurrency 200        # 检测死链
+bm delete bilibili --dry-run          # 预览删除
+bm mv "云服务器" --to "书签栏/技术" --dry-run
+bm mkdir "书签栏/归档/2024" --dry-run
 bm mvdir "书签栏/旧分类" --to "书签栏/归档" --dry-run
-
-# 对文件夹内书签排序（文件夹优先，各组内字典序）
 bm sort "书签栏/工具" --dry-run
 ```
 
----
-
-## 写操作安全机制
-
-- **`--dry-run`**：预览变更，不修改文件，建议每次写操作前先执行
-- **自动备份**：每次写操作前自动创建 `Bookmarks.bm-<毫秒时间戳>` 备份文件
-- **文件夹路径格式**：`书签栏/云服务器/网络监控`（用 `/` 分隔层级）
+`--profile N`：指定 Chrome Profile 编号，省略时自动选取第一个。
 
 ---
 
-## 死链检测说明
+## 项目结构
 
-```bash
-bm deadlinks [--concurrency 100] [--timeout 8]
 ```
-
-- 自动去重：相同 URL 只请求一次
-- 输出分为四类：
-  - HTTP 错误（4xx / 5xx）
-  - 超时
-  - 连接失败
-  - 已重定向（仍可访问，URL 已变）
-
----
+.
+├── src/                  # Rust 源码
+│   ├── main.rs           # CLI 入口（clap 子命令定义）
+│   ├── bookmark.rs       # 书签数据结构与解析
+│   ├── finder.rs         # Chrome 书签文件定位
+│   ├── write.rs          # 写操作（备份 + 保存）
+│   └── cmd/              # 各子命令实现
+├── skills/bookmarks/     # Claude Code Skill 包
+│   ├── SKILL.md          # Skill 定义（Claude 读取此文件）
+│   └── scripts/bm        # 预编译二进制
+└── Cargo.toml
+```
 
 ## 依赖
 
