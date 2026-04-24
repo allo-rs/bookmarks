@@ -27,7 +27,25 @@ pub fn backup(path: &Path) -> Result<PathBuf> {
     let ts = SystemTime::now().duration_since(UNIX_EPOCH)?.as_millis();
     let backup = path.with_file_name(format!("Bookmarks.bm-{ts}"));
     std::fs::copy(path, &backup)?;
+    cleanup_old_backups(path, 3);
     Ok(backup)
+}
+
+fn cleanup_old_backups(path: &Path, keep: usize) {
+    let dir = match path.parent() { Some(d) => d, None => return };
+    let mut backups: Vec<_> = std::fs::read_dir(dir)
+        .into_iter()
+        .flatten()
+        .flatten()
+        .filter(|e| {
+            e.file_name().to_string_lossy().starts_with("Bookmarks.bm-")
+        })
+        .collect();
+    if backups.len() <= keep { return; }
+    backups.sort_by_key(|e| e.file_name());
+    for entry in &backups[..backups.len() - keep] {
+        let _ = std::fs::remove_file(entry.path());
+    }
 }
 
 /// 按关键词搜索书签（名称或 URL 包含即命中）
